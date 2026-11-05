@@ -1,0 +1,20 @@
+# Executáveis do Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+
+# Variáveis de Ambiente e Logs
+.env
+*.log
+
+# Dados locais do Mosquitto e Postgres
+mosquitto/data/
+mosquitto/log/
+postgres_data/
+
+# IDEs
+.vscode/
+.idea/

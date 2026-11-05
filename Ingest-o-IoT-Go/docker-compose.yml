@@ -1,0 +1,43 @@
+name: ingest-o-iot-go
+
+services:
+  # Broker MQTT
+  mosquitto:
+    image: eclipse-mosquitto:2.0.20
+    container_name: mqtt-broker
+    restart: unless-stopped
+    ports:
+      - "${MQTT_PORT:-1883}:1883"
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto/data
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -h localhost -t '$$SYS/broker/uptime' -C 1 -W 3 -i healthcheck || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Banco de dados de séries temporais (PostgreSQL + TimescaleDB)
+  timescaledb:
+    image: timescale/timescaledb:2.17.2-pg15
+    container_name: timescale-db
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-iiot_db}
+    volumes:
+      - timescale_data:/var/lib/postgresql/data
+      # Scripts executados apenas na primeira inicialização do volume
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-iiot_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mosquitto_data:
+  timescale_data:
